@@ -71,7 +71,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
 // *********PRIVATE CONTROLLERS ****************
 // @desc get user profile
-// route PUT /api/úe/profile
+// @route PUT /api/úe/profile
 // @access Private
 
 const updateUserProfile = asyncHandler(async (req, res) => {
@@ -107,4 +107,190 @@ const updateUserProfile = asyncHandler(async (req, res) => {
   }
 });
 
-export { registerUser, loginUser, updateUserProfile };
+// @desc Delete user
+// @route DELETE /api/users
+// @asses private
+const deleteUserProfile = asyncHandler(async (req, res) => {
+  try {
+    // const user = await User.findById(req.user._id);
+    // console.log(user);
+    // await user.remove();
+
+    //find user in db (findById)
+    const user = await User.findById(req.user._id);
+    if (user) {
+      if (user.isAdmin) {
+        res.status(400);
+        throw new Error("Can't delete admin user");
+      }
+      //else delete user from DB
+      await user.deleteOne();
+      res.json({ message: "User deleted successfully" });
+    }
+
+    // else send error message
+    else {
+      res.status(400).json({ message: "User not found" });
+    }
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// @desc change password
+// @route PUT /api/users/password
+// @access private
+
+const changeUserPassword = asyncHandler(async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+  try {
+    //find user in db (findById)
+    const user = await User.findById(req.user._id);
+    // if user exist compare old password with hashed password then update user password and save it in Db
+    if (user && (await bcrypt.compare(oldPassword, user.password))) {
+      //hash password
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(newPassword, salt);
+      user.password = hashedPassword;
+      await user.save();
+      res.json({ message: "Password changed successfully" });
+    } else {
+      res.status(400).json({ message: "Invalid old password" });
+    }
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// @desc get all liked movies
+// route get /api/user/favorites
+// access private
+
+const getLikedMovies = asyncHandler(async (req, res) => {
+  try {
+    //find user in DB
+    const user = await User.findById(req.user._id).populate("likedMovies");
+
+    //if user exists send live movies to client
+    if (user) {
+      res.json(user.likedMovies);
+    } else {
+      res.status(400);
+      throw new Error("User not found");
+    }
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// @desc add moive to liked movies
+// @route POST /api/user/favorites
+// @access private
+const addLikedMovie = asyncHandler(async (req, res) => {
+  const { movieId } = req.body;
+  try {
+    //find user in DB
+    const user = await User.findById(req.user._id);
+    //if user exists add movie to liked movies
+    if (user) {
+      // check if movie already liked
+      // if movie already liked send error massage
+      if (user.likedMovies.includes(movieId)) {
+        res.status(400);
+        throw new Error("Movie already liked");
+      }
+      // else add movie to liked movies
+      user.likedMovies.push(movieId);
+      await user.save();
+      res.json(user.likedMovies);
+    }
+    // else send errror message
+    else {
+      res.status(400);
+      throw new Error("Movie not found");
+    }
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// @desc delete all movie from liked movies
+// @route DELETE /api/users/favorites
+// @access private
+
+const deleteLikedMovie = asyncHandler(async (req, res) => {
+  try {
+    //find user in DB
+    const user = await User.findById(req.user._id);
+    //if user exists delete movie from liked movies
+    if (user) {
+      user.likedMovies = [];
+      await user.save();
+      res.json({ message: "All liked movies deleted successfully" });
+    }
+    // else send errror message
+    else {
+      res.status(404);
+      throw new Error("User not found");
+    }
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+//**************ADMIN CONTROLLERS******************* */
+// @desc Get all users
+// @route GET /api/users
+// @access private/admin
+
+const getUsers = asyncHandler(async (req, res) => {
+  try {
+    // find all users in DB
+    const users = await User.find();
+    res.json(users);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// @desc Delete users
+// @route DELETE /api/users/:id
+// @access private/admin
+
+const deleteUsers = asyncHandler(async (req, res) => {
+  try {
+    // find user in DB
+    const user = await User.findById(req.params.id);
+    // if user exists delete user from DB
+    if (user) {
+      // if user is admin throw error message
+      if (user.isAdmin) {
+        res.status(400);
+        throw new Error("Can't delete admin user");
+      }
+      //else delete user from DB
+      await user.deleteOne();
+      res.json({ message: "User deleted successfully" });
+    }
+    // else send error message
+    else {
+      res.status(400);
+      throw new Error("User not found");
+    }
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+export {
+  registerUser,
+  loginUser,
+  updateUserProfile,
+  deleteUserProfile,
+  changeUserPassword,
+  getLikedMovies,
+  addLikedMovie,
+  deleteLikedMovie,
+  getUsers,
+  deleteUsers,
+};
