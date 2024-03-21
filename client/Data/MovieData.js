@@ -1,0 +1,28 @@
+export const Movies = [
+  {
+    name: "Iron man",
+    desc: "Lorem Ipsum is a placeholder text commonly used in publishing and typesetting",
+    titleImage: "",
+    image: "",
+    category: "Science",
+    language: "English",
+    year: "2016",
+    time: "2hr",
+    video: "",
+    rate: "",
+    reviews: 36,
+  },
+  {
+    name: "Army Of The Dead",
+    desc: "Lorem Ipsum is a placeholder text commonly used in publishing and typesetting",
+    titleImage: "",
+    image: "",
+    category: "Western",
+    language: "English",
+    year: "2022",
+    time: "3hr",
+    video: "",
+    rate: "",
+    reviews: 23,
+  },
+];
